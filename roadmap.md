@@ -1,4 +1,4 @@
-- [ ] Build the HomeHub marketplace landing and buyer shopping flow
-- [ ] Add seller workspace with product registration and guidance
-- [ ] Add admin review console and responsive navigation
-- [ ] Verify the main preview flow and metadata
+- [x] Build the HomeHub marketplace landing and buyer shopping flow
+- [x] Add seller workspace with product registration and guidance
+- [x] Add admin review console and responsive navigation
+- [x] Verify the main preview flow and metadata
