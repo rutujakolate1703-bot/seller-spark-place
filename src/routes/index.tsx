@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight,
   Bell,
@@ -6,7 +6,9 @@ import {
   Check,
   ChevronDown,
   ClipboardList,
+  Copy,
   CreditCard,
+  ExternalLink,
   Heart,
   LayoutDashboard,
   Leaf,
@@ -25,7 +27,8 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,6 +43,7 @@ import {
   REGISTRATION_FEE,
 } from "@/lib/demo-data";
 import type { OrderStatus, Product, ProductStatus } from "@/lib/types";
+import { slugifyStoreName } from "@/lib/storefront";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -281,7 +285,7 @@ function DiscoverView({
           <div className="relative min-h-[310px] overflow-hidden rounded-3xl bg-gradient-brand p-5 shadow-lift sm:min-h-[390px]">
             <div className="absolute -right-12 -top-12 size-48 rounded-full bg-background/20 blur-2xl" />
             <div className="absolute bottom-0 left-0 h-32 w-full bg-foreground/10" />
-            <img src={IMAGES.giftbox} alt="Handmade gift hamper" className="absolute bottom-0 left-1/2 z-10 h-[82%] w-[78%] -translate-x-1/2 object-contain drop-shadow-2xl" />
+            <img src={IMAGES["giftbox"]} alt="Handmade gift hamper" className="absolute bottom-0 left-1/2 z-10 h-[82%] w-[78%] -translate-x-1/2 object-contain drop-shadow-2xl" />
             <div className="absolute left-5 top-5 z-20 rounded-2xl bg-background/85 px-4 py-3 backdrop-blur-sm"><p className="text-xs font-medium text-muted-foreground">Maker spotlight</p><p className="mt-0.5 font-semibold">Handmade Gift Corner</p><p className="text-xs text-muted-foreground">Hyderabad · 4.9 rating</p></div>
             <div className="absolute bottom-5 right-5 z-20 rounded-2xl bg-background/90 px-4 py-3 text-right backdrop-blur-sm"><p className="text-xs text-muted-foreground">Starting from</p><p className="font-display text-xl font-semibold">₹199</p></div>
           </div>
@@ -326,13 +330,57 @@ function GuidanceView({ onStart }: { onStart: () => void }) {
 }
 
 function SellerView({ onNotice }: { onNotice: (message: string) => void }) {
-  const seller = demoSellers[0];
+  const seller = demoSellers.find((item) => item.id === "s-1");
+  if (!seller) return null;
   const products = demoProducts.filter((product) => product.sellerId === seller.id);
   const orders = demoOrders.filter((order) => order.sellerId === seller.id);
+  const [storeUrl, setStoreUrl] = useState("");
   const [showRegister, setShowRegister] = useState(false);
-  const [tab, setTab] = useState<"overview" | "products" | "orders">("overview");
+  const [tab, setTab] = useState<"overview" | "products" | "orders" | "store">("overview");
   const [registered, setRegistered] = useState(false);
-  return <PageFrame eyebrow="Seller workspace" title={`Good morning, ${seller.storeName.split(" ")[0]}.`} description="Here is what is happening with your store today."><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Metric icon={<TrendingUp />} label="Store views" value="2,026" detail="+18% this month" /><Metric icon={<ShoppingBag />} label="Orders" value="18" detail="4 need attention" /><Metric icon={<CreditCard />} label="This month" value="₹12,480" detail="After delivery fees" /><Metric icon={<Bell />} label="Updates" value="3" detail="Unread notifications" /></div><div className="mt-8 flex gap-1 overflow-x-auto border-b border-border">{(["overview", "products", "orders"] as const).map((item) => <Button key={item} variant="ghost" className={`shrink-0 rounded-b-none ${tab === item ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`} onClick={() => setTab(item)}>{item[0].toUpperCase() + item.slice(1)}</Button>)}</div>{tab === "overview" && <div className="mt-6 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]"><div className="rounded-2xl border border-border bg-card p-5"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Store performance</p><h3 className="mt-1 font-display text-2xl">You are building momentum</h3></div><Badge variant="secondary" className="text-success">Growing</Badge></div><div className="mt-8 flex h-36 items-end gap-2">{[42, 55, 48, 68, 60, 79, 92, 86, 100, 84, 108, 118].map((height, index) => <div key={index} className="flex flex-1 flex-col justify-end gap-2"><div className="rounded-t-md bg-gradient-brand" style={{ height: `${height}px` }} /><span className="text-center text-[10px] text-muted-foreground">{index % 3 === 0 ? `W${index / 3 + 1}` : ""}</span></div>)}</div></div><div className="rounded-2xl border border-border bg-card p-5"><div className="flex items-start justify-between"><div><p className="text-sm text-muted-foreground">Your checklist</p><h3 className="mt-1 font-display text-2xl">Ready to grow?</h3></div><BookOpen className="size-5 text-primary" /></div><div className="mt-5 space-y-4"><CheckItem done text="Store profile completed" /><CheckItem done text="First product approved" /><CheckItem done={false} text="Add a second product" /><CheckItem done={false} text="Complete business guidance" /></div><Button variant="outline" className="mt-6 w-full" onClick={() => onNotice("Guidance checklist opened")}>View guidance <ArrowRight /></Button></div></div>}{tab === "products" && <ProductManager products={products} onRegister={() => setShowRegister(true)} onNotice={onNotice} />}{tab === "orders" && <SellerOrders orders={orders} />}{showRegister && <RegisterProduct onClose={() => setShowRegister(false)} onComplete={() => { setShowRegister(false); setRegistered(true); onNotice("Product registration started"); }} />}{registered && <div className="mt-5 rounded-xl border border-success/30 bg-success/10 p-4 text-sm text-success-foreground">Your new product is saved as a draft. Complete the ₹{REGISTRATION_FEE} registration payment to send it for review.</div>}</PageFrame>;
+  const storeSlug = slugifyStoreName(seller.storeName);
+  const storePath = `/store/${storeSlug}`;
+
+  useEffect(() => {
+    setStoreUrl(`${window.location.origin}${storePath}`);
+  }, [storePath]);
+
+  return <PageFrame eyebrow="Seller workspace" title={`Good morning, ${seller.storeName.split(" ")[0]}.`} description="Here is what is happening with your store today."><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><Metric icon={<TrendingUp />} label="Store views" value="2,026" detail="+18% this month" /><Metric icon={<ShoppingBag />} label="Orders" value="18" detail="4 need attention" /><Metric icon={<CreditCard />} label="This month" value="₹12,480" detail="After delivery fees" /><Metric icon={<Bell />} label="Updates" value="3" detail="Unread notifications" /></div><div className="mt-8 flex gap-1 overflow-x-auto border-b border-border">{(["overview", "products", "orders", "store"] as const).map((item) => <Button key={item} variant="ghost" className={`shrink-0 rounded-b-none ${tab === item ? "border-b-2 border-primary text-primary" : "text-muted-foreground"}`} onClick={() => setTab(item)}>{item === "store" ? "My Store" : item[0].toUpperCase() + item.slice(1)}</Button>)}</div>{tab === "overview" && <div className="mt-6 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]"><div className="rounded-2xl border border-border bg-card p-5"><div className="flex items-center justify-between"><div><p className="text-sm text-muted-foreground">Store performance</p><h3 className="mt-1 font-display text-2xl">You are building momentum</h3></div><Badge variant="secondary" className="text-success">Growing</Badge></div><div className="mt-8 flex h-36 items-end gap-2">{[42, 55, 48, 68, 60, 79, 92, 86, 100, 84, 108, 118].map((height, index) => <div key={index} className="flex flex-1 flex-col justify-end gap-2"><div className="rounded-t-md bg-gradient-brand" style={{ height: `${height}px` }} /><span className="text-center text-[10px] text-muted-foreground">{index % 3 === 0 ? `W${index / 3 + 1}` : ""}</span></div>)}</div></div><div className="rounded-2xl border border-border bg-card p-5"><div className="flex items-start justify-between"><div><p className="text-sm text-muted-foreground">Your checklist</p><h3 className="mt-1 font-display text-2xl">Ready to grow?</h3></div><BookOpen className="size-5 text-primary" /></div><div className="mt-5 space-y-4"><CheckItem done text="Store profile completed" /><CheckItem done text="First product approved" /><CheckItem done={false} text="Add a second product" /><CheckItem done={false} text="Complete business guidance" /></div><Button variant="outline" className="mt-6 w-full" onClick={() => onNotice("Guidance checklist opened")}>View guidance <ArrowRight /></Button></div></div>}{tab === "products" && <ProductManager products={products} onRegister={() => setShowRegister(true)} onNotice={onNotice} />}{tab === "orders" && <SellerOrders orders={orders} />}{tab === "store" && <MyStore seller={seller} products={products} storePath={storePath} storeUrl={storeUrl} onNotice={onNotice} />}{showRegister && <RegisterProduct onClose={() => setShowRegister(false)} onComplete={() => { setShowRegister(false); setRegistered(true); onNotice("Product registration started"); }} />}{registered && <div className="mt-5 rounded-xl border border-success/30 bg-success/10 p-4 text-sm text-success-foreground">Your new product is saved as a draft. Complete the ₹{REGISTRATION_FEE} registration payment to send it for review.</div>}</PageFrame>;
+}
+
+function MyStore({ seller, products, storePath, storeUrl, onNotice }: { seller: (typeof demoSellers)[number]; products: Product[]; storePath: string; storeUrl: string; onNotice: (message: string) => void }) {
+  const liveProducts = products.filter((product) => product.status === "ACTIVE" && product.stock > 0);
+
+  async function copyStoreLink() {
+    if (!storeUrl) return;
+    try {
+      await navigator.clipboard.writeText(storeUrl);
+      onNotice("Store link copied");
+    } catch {
+      onNotice("Could not copy the link. Open your store and copy its address.");
+    }
+  }
+
+  return <section className="mt-6 grid gap-6 lg:grid-cols-[1fr_auto]">
+    <div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div><p className="text-sm text-muted-foreground">Your public storefront</p><h2 className="mt-1 font-display text-2xl">{seller.storeName}</h2><p className="mt-1 text-sm text-muted-foreground">{seller.location}</p></div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={copyStoreLink} disabled={!storeUrl}><Copy /> Copy link</Button>
+          <Button asChild><Link to="/store/$slug" params={{ slug: slugifyStoreName(seller.storeName) }}>Open store <ExternalLink /></Link></Button>
+        </div>
+      </div>
+      <p className="mt-4 max-w-2xl text-sm leading-6 text-muted-foreground">{seller.description}</p>
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {liveProducts.map((product) => <article key={product.id} className="overflow-hidden rounded-xl border border-border bg-card"><img src={IMAGES[product.image]} alt={product.name} className="aspect-[1.2] w-full object-cover" /><div className="p-4"><p className="font-medium">{product.name}</p><div className="mt-2 flex items-center justify-between text-sm"><span className="font-semibold">{formatPrice(product.price)}</span><span className="text-muted-foreground">{product.stock} in stock</span></div></div></article>)}
+      </div>
+    </div>
+    <aside className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card p-5 text-center lg:w-56">
+      {storeUrl ? <QRCodeSVG value={storeUrl} size={144} title={`QR code for ${seller.storeName}`} className="rounded-md border border-border bg-background p-2" /> : <div className="size-36 animate-pulse rounded-md bg-secondary" aria-label="Preparing store QR code" />}
+      <p className="font-medium">Share your store</p><p className="text-xs leading-5 text-muted-foreground">Scan to visit your public product page.</p>
+      <p className="w-full break-all text-xs text-primary">{storeUrl || storePath}</p>
+    </aside>
+  </section>;
 }
 
 function PageFrame({ eyebrow, title, description, children }: { eyebrow: string; title: string; description: string; children: React.ReactNode }) { return <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8"><div className="max-w-2xl"><p className="text-sm font-medium text-primary">{eyebrow}</p><h1 className="mt-2 font-display text-4xl tracking-tight sm:text-5xl">{title}</h1><p className="mt-4 text-base leading-7 text-muted-foreground">{description}</p></div><div className="mt-10">{children}</div></div>; }

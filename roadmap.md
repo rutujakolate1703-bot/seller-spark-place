@@ -2,3 +2,6 @@
 - [x] Add seller workspace with product registration and guidance
 - [x] Add admin review console and responsive navigation
 - [x] Verify the main preview flow and metadata
+- [ ] Clear the remaining preview type errors
+- [ ] Add a public seller storefront with a shareable link and QR code
+- [ ] Verify the seller storefront and preview flow
