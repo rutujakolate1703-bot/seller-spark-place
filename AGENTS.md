@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Keep publicly shared seller shops as top-level TanStack routes, deriving their products from the common demo catalog so QR and direct links render independently.
