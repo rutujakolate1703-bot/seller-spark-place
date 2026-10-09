@@ -5,3 +5,4 @@
 - [ ] Clear the remaining preview type errors
 - [ ] Add a public seller storefront with a shareable link and QR code
 - [ ] Verify the seller storefront and preview flow
+- [ ] Review the uploaded HomeHub login-page brief and implement its requested flow
